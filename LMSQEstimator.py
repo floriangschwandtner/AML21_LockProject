@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 """ 
  Function definition for Least Median Square Estimator
@@ -19,7 +20,7 @@ def LMSQEstimator(x_vec, y_vec, epsilon=0.4, P=0.99, p=6):
     # Get number of samples
     m = int(np.log(1-P)/(np.log(1-(1-epsilon)**p)))
     print("Number of samples=",m)
-    best_median = 1.0*10**20;
+    best_median = 1.0*10**20
 
     beta = [0.0, 0.0]
     beta_est = [0.0, 0.0]
@@ -72,3 +73,36 @@ def MedianOfSquaredResiduals(x_vec, y_vec, beta):
         residuals[k] = abs(a*x_vec[k]+b*y_vec[k]+c)/(np.sqrt(a**2+b**2))
 
     return np.median(residuals)
+
+def Calc_distance(a,b,c,point_x,point_y):
+    '''
+    This calculate the distance between a point(point_x,pont_y) to the line(ax+by+c=0).
+    This functino is used in the following function "getIfPointOnTheLine"
+    :param a:
+    :param b:
+    :param c:
+      ===> for ax+by+c=0
+    :param point_x:
+    :param point_y:
+      ===> the point to be calculated
+    :return: the distance
+    '''
+    numer = abs(a*point_x + b*point_y + c)
+    denom = math.sqrt(pow(a,2)+pow(b,2))
+    return numer/denom
+
+def getIfPointsOnTheLine(a,b,c,points,buffer): #直線ax+by+c=0 点([x,y])
+    '''
+    This function decides if a point is close enough to the given line.
+    :param a:
+    :param b:
+    :param c:
+    :param points: The points to be decided
+    :param buffer: The tolerance. If the point is in the area of buffer from the line, the point will be labeled 1
+    :return: array with the results (0=> not on the line, 1=> on the line)
+    '''
+    conditions = np.zeros(points.shape[0])
+    for i in range(len(points)-1):
+        if Calc_distance(a,b,c,*points[i])<buffer:
+            conditions[i]=1
+    return conditions
