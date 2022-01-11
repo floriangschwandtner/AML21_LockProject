@@ -83,7 +83,7 @@ print('maxbin y second half:', value_max_y2)
 # Fit two lines in y-direction
 '''
 The buffer to be set manually. This defines the allowed gap to a line.'''
-buffer=0.5
+buffer=0.25
 
 
 '''
@@ -98,21 +98,24 @@ x_linspace = np.linspace(x_vec.min(), x_vec.max(), num=20)
 condition1 = (y_vec>(value_max_y1-boundwidht)) & (y_vec<(value_max_y1+boundwidht)) & (x_vec<(value_max_x-2))
 
 H1 = np.extract(condition1, x_vec)
-z1 = np.extract(condition1, y_vec)-value_max_y1
+z1 = np.extract(condition1, y_vec)
 
 #inverse = np.linalg.inv(H2.T@H2)
-H_term = H1/(H1.T@H1)
-beta1_LSQ = np.matmul(H_term, z1)
-y_linear1_LSQ = x_linspace*beta1_LSQ+value_max_y1 ##### the equation for the line 1###
+# H_term = H1/(H1.T@H1)
+# beta1_LSQ = np.matmul(H_term, z1)
+# y_linear1_LSQ = x_linspace*beta1_LSQ+value_max_y1 ##### the equation for the line 1###
+
+beta1 = LMSQEstimator(H1, z1)
 
 '''
 step 2. Make decisions if points are on the line 1 (calculated above)'''
-condition_vec_1 = getIfPointsOnTheLine(beta1_LSQ,-1,value_max_y1,vec,buffer)####added
-PointsForLine1=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_1[x]==1]) ####added
+condition_vec_1 = getIfPointsOnTheLine(beta1[0],-1,beta1[1],vec,buffer)
+PointsForLine1=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_1[x]==1]) 
+
 #print(PointsForLine1.shape)
 
 #beta1 = LMSQEstimator(H1, np.extract(condition1, y_vec))
-#y_linear1 = x_linspace*beta1[0]+beta1[1]
+y_linear1 = x_linspace*beta1[0]+beta1[1]
 
 #LLSQ 2
 '''
@@ -120,21 +123,21 @@ Step 1. Calculate the line for the left wall (numbered 2)'''
 condition2 = (y_vec>(value_max_y2-boundwidht)) & (y_vec<(value_max_y2+boundwidht)) & (x_vec<(value_max_x-3))
 
 H2 = np.extract(condition2, x_vec)
-z2 = np.extract(condition2, y_vec)-value_max_y2
+z2 = np.extract(condition2, y_vec)
 
 #inverse = np.linalg.inv(H2.T@H2)
-H_term = H2/(H2.T@H2)
-beta2_LSQ = np.matmul(H_term, z2)
+# H_term = H2/(H2.T@H2)
+# beta2_LSQ = np.matmul(H_term, z2)
 
 beta2 = LMSQEstimator(H2, z2)
 
-y_linear2 = x_linspace*beta2[0]+beta2[1]+value_max_y2
-y_linear2_LSQ = x_linspace*beta2_LSQ+value_max_y2##### the equation for the line 2###
+y_linear2 = x_linspace*beta2[0]+beta2[1]
+#_linear2_LSQ = x_linspace*beta2_LSQ+value_max_y2##### the equation for the line 2###
 
 
 '''
 step 2. Make decisions if points are on the line 1 (calculated above)'''
-condition_vec_2 = getIfPointsOnTheLine(beta2_LSQ,-1,value_max_y2,vec,buffer)
+condition_vec_2 = getIfPointsOnTheLine(beta2[0],-1,beta2[1],vec,buffer)
 PointsForLine2=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_2[x]==1])
 #print(PointsForLine2.shape)
 
@@ -143,25 +146,33 @@ boundwidht_x = 0.5
 condition3 = (x_vec>(value_max_x-boundwidht_x)) & (x_vec<(value_max_x+boundwidht_x))
 print(condition3.shape)
 
-H3 = np.extract(condition3, x_vec)-value_max_x
-z3 = np.extract(condition3, y_vec)
+# H3 = np.extract(condition3, x_vec)
+# z3 = np.extract(condition3, y_vec)
 
 
 '''
 step 3. find the rest of the points'''
 PointsForLine3=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_1[x]==0 and condition_vec_2[x]==0])
+H3 = PointsForLine3[:,0]
+z3 = PointsForLine3[:,1]
+
 #inverse = np.linalg.inv(H2.T@H2)
-#H_term = H3/(H3.T@H3)
-#beta3_LSQ = np.matmul(H_term, z3)
-#beta3_LSQ = np.matmul( z3, H_term)
+# H_term = H3/(H3.T@H3)
+# beta3_LSQ = np.matmul(H_term, z3)
+# beta3_LSQ = np.matmul( z3, H_term)
 
-#beta3 = LMSQEstimator(H3, z3)
-#beta3 = LMSQEstimator(z3,H3)
+beta3 = LMSQEstimator(H3, z3)
 
-#x_linspace2 = np.linspace(H3.min(), H3.max())
+# beta3 = LMSQEstimator(z3,H3)
+
+x_linspace2 = np.linspace(H3.min(), H3.max())
 
 #y_linear3_LSQ = x_linspace2*beta3_LSQ#*4#########*4してみた
-#y_linear3 = x_linspace2*beta3[0]+beta3[1]
+y_linear3 = x_linspace2*beta3[0]+beta3[1]
+
+condition_vec_3 = getIfPointsOnTheLine(beta3[0],-1,beta3[1],PointsForLine3,buffer)
+
+filteredPointsForLine3 = np.array([PointsForLine3[x,:] for x in range(PointsForLine3.shape[0]) if condition_vec_3[x]==1])
 
 ############################### Show Result################
 plt.subplot(3,1,3)
@@ -172,15 +183,17 @@ plt.plot(PointsForLine1[:,0], PointsForLine1[:,1], '*b')
 plt.plot(PointsForLine2[:,0], PointsForLine2[:,1], '*y')
 #plt.plot(np.extract(condition3, x_vec), z3, '*g')
 plt.plot(PointsForLine3[:,0], PointsForLine3[:,1], '*g')
+plt.plot(filteredPointsForLine3[:,0], filteredPointsForLine3[:,1], '*r')
+
 #plt.plot(x_linspace,y_linear1, 'k-')
-plt.plot(x_linspace,y_linear1_LSQ, 'r--')
+plt.plot(x_linspace,y_linear1, 'r--')
 
 #plt.plot(x_linspace,y_linear2, 'k-')
-plt.plot(x_linspace,y_linear2_LSQ, 'r--')
+plt.plot(x_linspace,y_linear2, 'r--')
 
 #plt.plot(H3, z3, '*')
-#plt.plot(x_linspace2+value_max_x, y_linear3, 'k-')
-#plt.plot(x_linspace2+value_max_x, y_linear3_LSQ, 'r--')
+plt.plot(x_linspace2, y_linear3, 'r--')
+# plt.plot(x_linspace+value_max_x, y_linear3_LSQ, 'r--')
 
 ax = plt.gca()
 
@@ -189,4 +202,19 @@ ax.set_ylim([y_vec.min(), y_vec.max()])
 
 # Classify points and output a file with points and classification
 
+#Points not belonging to any wall.
+noWall = np.array([PointsForLine3[x,:] for x in range(PointsForLine3.shape[0]) if condition_vec_3[x]==0])
+noWall = np.c_[noWall, np.zeros(noWall.shape[0])]
+#print(noWall)
+
+PointsForLine1 = np.c_[PointsForLine1, np.ones(PointsForLine1.shape[0])]
+PointsForLine2 = np.c_[PointsForLine2, 2*np.ones(PointsForLine2.shape[0])]
+filteredPointsForLine3 = np.c_[filteredPointsForLine3, 3*np.ones(filteredPointsForLine3.shape[0])]
+
+toSave = np.vstack((noWall, PointsForLine1, PointsForLine2, filteredPointsForLine3))
+
+print(toSave.shape)
+print(vec.shape)
+
+np.save("labeledArray.npy", toSave)
 plt.show()

@@ -15,7 +15,7 @@ def LMSQEstimator(x_vec, y_vec, epsilon=0.4, P=0.99, p=6):
     n = len(x_vec)
 
     # define degree, two for line
-    d = 2
+    d = 1
 
     # Get number of samples
     m = int(np.log(1-P)/(np.log(1-(1-epsilon)**p)))
@@ -70,7 +70,8 @@ def MedianOfSquaredResiduals(x_vec, y_vec, beta):
         # Calculate residual to line for every point
         # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
         # residuals[k] = (y_vec[k]-(beta[0]*x_vec[k]+beta[1]))**2
-        residuals[k] = abs(a*x_vec[k]+b*y_vec[k]+c)/(np.sqrt(a**2+b**2))
+        #residuals[k] = abs(a*x_vec[k]+b*y_vec[k]+c)/(np.sqrt(a**2+b**2))
+        residuals[k] = Calc_distance(a,b,c,x_vec[k],y_vec[k])
 
     return np.median(residuals)
 
