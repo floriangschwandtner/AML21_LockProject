@@ -104,6 +104,6 @@ def getIfPointsOnTheLine(a,b,c,points,buffer): #直線ax+by+c=0 点([x,y])
     '''
     conditions = np.zeros(points.shape[0])
     for i in range(len(points)-1):
-        if Calc_distance(a,b,c,*points[i])<buffer:
+        if Calc_distance(a,b,c,points[i][0],points[i][1])<buffer:
             conditions[i]=1
     return conditions
