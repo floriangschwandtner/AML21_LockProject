@@ -19,16 +19,15 @@ data = np.load("Dataset.npy")
 print(data.shape)
 input_tensor = data[:, 0:3, :].transpose(2, 0, 1)
 label_tensor = data[:, -1, :].transpose(1, 0)
-print(input_tensor.shape)
 
 toSave = []
 
 # extract information  ###I could not understand what this is for.
 for frame in range(0, input_tensor.shape[0]):
-    cutoff_dist = 2.0
+    cutoff_dist = 1.0
     condition = ((input_tensor[frame, :, 0]**2 +
                 input_tensor[frame, :, 1]**2)**0.5 > cutoff_dist)
-    print(condition.shape)
+
     # returns [0.725 0.99]
     x_vec = np.extract(condition, input_tensor[frame, :, 0])
     #print(x_vec.shape) returns(3301,)
@@ -215,7 +214,12 @@ for frame in range(0, input_tensor.shape[0]):
     PointsForLine2 = np.c_[PointsForLine2, 2*np.ones(PointsForLine2.shape[0])]
     filteredPointsForLine3 = np.c_[filteredPointsForLine3, 3*np.ones(filteredPointsForLine3.shape[0])]
 
-    toSave.append(np.vstack((noWall, PointsForLine1, PointsForLine2, filteredPointsForLine3)))
+    #shuffle points to avoid dependency on order of points
+    toSaveFrame = np.vstack((noWall, PointsForLine1, PointsForLine2, filteredPointsForLine3))
+    np.random.shuffle(toSaveFrame)
+
+    toSave.append(toSaveFrame)
 
 np.savez("labeledArray.npz", *toSave)
-#plt.show()
+
+plt.show()
