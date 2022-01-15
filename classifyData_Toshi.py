@@ -24,7 +24,7 @@ toSave = []
 
 # extract information  ###I could not understand what this is for.
 for frame in range(0, input_tensor.shape[0]):
-    cutoff_dist = 1.0
+    cutoff_dist = 1.5
     condition = ((input_tensor[frame, :, 0]**2 +
                 input_tensor[frame, :, 1]**2)**0.5 > cutoff_dist)
 
@@ -33,8 +33,9 @@ for frame in range(0, input_tensor.shape[0]):
     #print(x_vec.shape) returns(3301,)
     y_vec = np.extract(condition, input_tensor[frame, :, 1])
     z_vec = np.extract(condition, input_tensor[frame, :, 2])
-    vec = np.vstack((x_vec,y_vec,z_vec)).T##### added
 
+    vec = np.vstack((x_vec,y_vec,z_vec)).T##### added
+    full_vec = np.vstack((input_tensor[frame, :, 0],input_tensor[frame, :, 1],input_tensor[frame, :, 2])).T
     print(vec.shape)
 
     # plot
@@ -94,14 +95,19 @@ for frame in range(0, input_tensor.shape[0]):
     # Linear Model y=kx+d
     # z = y_vec
     # H = [x 1]
-    boundwidht = 1.0;
+    boundwidht = 1.0
     x_linspace = np.linspace(x_vec.min(), x_vec.max(), num=20)
-
 
     condition1 = (y_vec>(value_max_y1-boundwidht)) & (y_vec<(value_max_y1+boundwidht)) & (x_vec<(value_max_x-2))
 
     H1 = np.extract(condition1, x_vec)
     z1 = np.extract(condition1, y_vec)
+
+    # condition1 = (input_tensor[frame, :, 1]>(value_max_y1-boundwidht)) & (input_tensor[frame, :, 1]<(value_max_y1+boundwidht)) & (input_tensor[frame, :, 0]<(value_max_x-2))
+
+    # H1 = np.extract(condition1, input_tensor[frame, :, 0])
+    # z1 = np.extract(condition1, input_tensor[frame, :, 1])
+
 
     #inverse = np.linalg.inv(H2.T@H2)
     # H_term = H1/(H1.T@H1)
@@ -112,8 +118,9 @@ for frame in range(0, input_tensor.shape[0]):
 
     '''
     step 2. Make decisions if points are on the line 1 (calculated above)'''
-    condition_vec_1 = getIfPointsOnTheLine(beta1[0],-1,beta1[1],vec,buffer)
-    PointsForLine1=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_1[x]==1]) 
+    # condition_vec_1 = getIfPointsOnTheLine(beta1[0],-1,beta1[1],vec,buffer)
+    condition_vec_1 = getIfPointsOnTheLine(beta1[0],-1,beta1[1],full_vec,buffer)
+    PointsForLine1=np.array([full_vec[x,:] for x in range(full_vec.shape[0]) if condition_vec_1[x]==1]) 
 
     #print(PointsForLine1.shape)
 
@@ -140,8 +147,8 @@ for frame in range(0, input_tensor.shape[0]):
 
     '''
     step 2. Make decisions if points are on the line 1 (calculated above)'''
-    condition_vec_2 = getIfPointsOnTheLine(beta2[0],-1,beta2[1],vec,buffer)
-    PointsForLine2=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_2[x]==1])
+    condition_vec_2 = getIfPointsOnTheLine(beta2[0],-1,beta2[1],full_vec,buffer)
+    PointsForLine2=np.array([full_vec[x,:] for x in range(full_vec.shape[0]) if condition_vec_2[x]==1])
     #print(PointsForLine2.shape)
 
     # Fit one line in x-direction
@@ -155,9 +162,10 @@ for frame in range(0, input_tensor.shape[0]):
 
     '''
     step 3. find the rest of the points'''
-    PointsForLine3=np.array([vec[x,:] for x in range(vec.shape[0]) if condition_vec_1[x]==0 and condition_vec_2[x]==0])
+    PointsForLine3=np.array([full_vec[x,:] for x in range(full_vec.shape[0]) if (condition_vec_1[x]==0 and condition_vec_2[x]==0 and condition[x]!=0)])
     H3 = PointsForLine3[:,0]
     z3 = PointsForLine3[:,1]
+
 
     #inverse = np.linalg.inv(H2.T@H2)
     # H_term = H3/(H3.T@H3)
@@ -173,9 +181,9 @@ for frame in range(0, input_tensor.shape[0]):
     #y_linear3_LSQ = x_linspace2*beta3_LSQ#*4#########*4してみた
     y_linear3 = x_linspace2*beta3[0]+beta3[1]
 
-    condition_vec_3 = getIfPointsOnTheLine(beta3[0],-1,beta3[1],PointsForLine3,buffer)
+    condition_vec_3 = getIfPointsOnTheLine(beta3[0],-1,beta3[1],full_vec,buffer)
 
-    filteredPointsForLine3 = np.array([PointsForLine3[x,:] for x in range(PointsForLine3.shape[0]) if condition_vec_3[x]==1])
+    filteredPointsForLine3 = np.array([full_vec[x,:] for x in range(full_vec.shape[0]) if condition_vec_3[x]==1])
 
     ############################### Show Result################
     plt.subplot(3,1,3)
@@ -206,17 +214,23 @@ for frame in range(0, input_tensor.shape[0]):
     # Classify points and output a file with points and classification
 
     #Points not belonging to any wall.
-    noWall = np.array([PointsForLine3[x,:] for x in range(PointsForLine3.shape[0]) if condition_vec_3[x]==0])
-    noWall = np.c_[noWall, np.zeros(noWall.shape[0])]
-    #print(noWall)
+    # noWall = np.array([PointsForLine3[x,:] for x in range(PointsForLine3.shape[0]) if condition_vec_3[x]==0])
+    # noWall = np.c_[noWall, np.zeros(noWall.shape[0])]
+    # #print(noWall)
 
-    PointsForLine1 = np.c_[PointsForLine1, np.ones(PointsForLine1.shape[0])]
-    PointsForLine2 = np.c_[PointsForLine2, 2*np.ones(PointsForLine2.shape[0])]
-    filteredPointsForLine3 = np.c_[filteredPointsForLine3, 3*np.ones(filteredPointsForLine3.shape[0])]
+    # PointsForLine1 = np.c_[PointsForLine1, np.ones(PointsForLine1.shape[0])]
+    # PointsForLine2 = np.c_[PointsForLine2, 2*np.ones(PointsForLine2.shape[0])]
+    # filteredPointsForLine3 = np.c_[filteredPointsForLine3, 3*np.ones(filteredPointsForLine3.shape[0])]
 
-    #shuffle points to avoid dependency on order of points
-    toSaveFrame = np.vstack((noWall, PointsForLine1, PointsForLine2, filteredPointsForLine3))
-    np.random.shuffle(toSaveFrame)
+    toSaveFrame = np.c_[full_vec, 0*condition+1*condition_vec_1+2*condition_vec_2+3*condition_vec_3]
+
+    # if points are classified into multiple bins, don't count them and set to zero
+
+    toSaveFrame[toSaveFrame[:,3]>3 ]= 0
+
+    # print map of entries
+    unique, counts = np.unique(toSaveFrame[:,3], return_counts=True)
+    print(dict(zip(unique, counts)))
 
     toSave.append(toSaveFrame)
 
