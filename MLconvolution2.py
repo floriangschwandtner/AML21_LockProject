@@ -7,6 +7,9 @@ from tensorflow.keras.layers import Dense, Activation, Dropout, SimpleRNN, LSTM
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.utils import to_categorical
 
+
+
+
 '''
 This code uses the normal method of convolution model. The code requires the whole information of all points to predict 
 the labels of all the points.
@@ -33,8 +36,8 @@ def getInputLabel(input, label, period=20):
     return input_tensor, label_tensor'''
 
 
-data = np.load("DataModified.npy")  # shape (13212, 4, 25) ######Loading Data
-# print(data.shape)
+data = np.load("LabeledOriginalMatrix.npy")  # shape (13212, 4, 25) ######Loading Data
+#print(data)
 input = data[:, 0:-1, :].transpose(2, 0, 1)
 label = data[:, -1, :].transpose(1, 0)
 # print(input)
@@ -43,9 +46,7 @@ print("input", input.shape)
 print("label", label.shape)
 #input = input.reshape(input.shape[0] * input.shape[1],
 #                     input.shape[2])  #####Datei in eine Reihe umformen. Siehe Erklärung
-print("input", input.shape)
 
-print("label", label.shape)
 
 ##change period
 '''for 0/1 problem
@@ -90,15 +91,21 @@ Die Anzahl der Layer, Knoten, Aktivierungsfunktion, Dropout.... diese Hyperparam
 '''
 
 model_1 = Sequential()
-model_1.add(Dense(200, activation='relu', input_shape=(input_tensor.shape[1],input_tensor.shape[2])))  # input_shape=(系列長T, x_tの次元)
+model_1.add(Dense(500, activation='relu', input_shape=(input_tensor.shape[1],input_tensor.shape[2])))  # input_shape=(系列長T, x_tの次元)
 model_1.add(Dropout(0.5))
-model_1.add(Dense(2, activation='softmax'))
+model_1.add(Dense(200, activation='relu'))  # input_shape=(系列長T, x_tの次元)
+model_1.add(Dropout(0.5))
+model_1.add(Dense(label_tensor.shape[2], activation='softmax'))
 model_1.summary()
 model_1.compile(loss='categorical_crossentropy',
               optimizer='sgd',
               metrics=['accuracy'])
 
-
+from tensorflow.keras.utils import plot_model
+plot_model(model_1, to_file='modelConvolution2.png', show_shapes=True)
+#image = plt.imread("model.png")
+#plt.show(image)
+#plt.show()
 
 
 # ======================Einstellung des Earlystopping================#
@@ -112,7 +119,8 @@ earlystopping = EarlyStopping(monitor='loss', patience=5)
 Ihr sollt selber Batch_size und epochs lernen. Etwas schwirig zu erklären. 
 Batch_size ist auch anzupassen. 
 '''
-model_1.fit(X_train, y_train, batch_size=10, epochs=5, callbacks=[earlystopping])
+model_1.fit(X_train, y_train, batch_size=10, epochs=500, callbacks=[earlystopping])
+model_1.save('Convolution2_X10Y10Z20.h5')
 
 # =======================Bewertung des Models================#
 '''
@@ -132,8 +140,8 @@ print('Test accuracy:', score[1])
 print(y_test.shape)
 
 result = model_1.predict(X_test)
-print(result.shape)
-print(result)
+#print(result.shape)
+#print(result)
 
 '''
 y_test=y_test.flatten()
@@ -156,6 +164,6 @@ Blaue Lienie (Stange) sind die y_test, also die richtige Lösung.
 Orange sind die Schätzungen aus dem Model. 
 Je identischer sind die beide Verteilungen, desto besser ist das Ergebnis.
 '''
-plt.plot(range(result.shape[1]),y_test[100,:,1])
-plt.plot(range(result.shape[1]),result[100,:,1])
+plt.plot(range(result.shape[1]),y_test[0,:,1])
+plt.plot(range(result.shape[1]),result[0,:,1])
 plt.show()
