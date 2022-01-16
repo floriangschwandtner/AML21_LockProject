@@ -40,7 +40,7 @@ def getInputLabel(input,label, period=20):
 
 
 
-data=np.load("DataModified.npy")#shape (13212, 4, 25) ######Loading Data
+data=np.load("DataForTraining.npy")#shape (13212, 4, frames) ######Loading Data
 #print(data.shape)
 input=data[:,0:-1,:].transpose(2,0,1)
 label=data[:,-1,:].transpose(1,0)
@@ -78,12 +78,18 @@ model_1.summary()
 model_1.compile(optimizer='adam',loss='mse',metrics=['mae'])# for 0/1 problem'''
 
 model_1 = Sequential()
-model_1.add(Dense(5, activation='relu', input_shape=(3*P,)))#input_shape=(系列長T, x_tの次元)
+model_1.add(Dense(200, activation='relu', input_shape=(3*P,)))#input_shape=(系列長T, x_tの次元)
+model_1.add(Dropout(0.5))
+model_1.add(Dense(50, activation='relu'))
 model_1.add(Dropout(0.5))
 model_1.add(Dense(label_tensor.shape[1], activation='softmax'))
+model_1.summary()
 model_1.compile(loss='categorical_crossentropy',
               optimizer='sgd',
               metrics=['accuracy'])
+
+from tensorflow.keras.utils import plot_model
+plot_model(model_1, to_file='modelConvolution1.png', show_shapes=True)
 
 #=======================Datei zum Training und der Validierung verteilen============#
 '''
@@ -96,15 +102,15 @@ X_train, X_test, y_train, y_test = train_test_split(input_tensor, label_tensor, 
                                                 	random_state=100, shuffle = True)
 print(X_train.shape)
 print(y_train.shape)
-plt.plot(range(500),y_test[:500,1])
-plt.show()
+#plt.plot(range(500),y_test[:500,1])
+#plt.show()
 
 
 #======================Einstellung des Earlystopping================#
 '''
 Wenn das Model genug trainiert ist, stoppt das Training, auch wenn die maximale Anzahl der Epochs erreicht ist.
 '''
-earlystopping = EarlyStopping(monitor='loss', patience=5)
+earlystopping = EarlyStopping(monitor='loss', patience=2)
 
 
 #======================Training==================#
@@ -112,8 +118,8 @@ earlystopping = EarlyStopping(monitor='loss', patience=5)
 Ihr sollt selber Batch_size und epochs lernen. Etwas schwirig zu erklären. 
 Batch_size ist auch anzupassen. 
 '''
-model_1.fit(X_train, y_train, batch_size=10, epochs=50, callbacks=[earlystopping])
-
+model_1.fit(X_train, y_train, batch_size=10, epochs=16, callbacks=[earlystopping])
+model_1.save('Convolution1_X10Y10Z20.h5')
 #=======================Bewertung des Models================#
 '''
 Das Model wird hier in die test-Datei eingesetzt. test-Datei sind nicht beim Training verwendet. Deshalb kennt das Model
