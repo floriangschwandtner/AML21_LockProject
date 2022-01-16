@@ -37,28 +37,31 @@ print('Test accuracy:', score[1])
 
 result = model.predict(X_test)
 
+Frame=66
+
+
 fig = plt.figure()
 ax = fig.add_subplot(4, 1, 1)
 ax.set_title("not Wall")
-ax.plot(range(result.shape[1]), y_test[0,:,0])
-ax.plot(range(result.shape[1]), result[0,:,0])
+ax.plot(range(result.shape[1]), y_test[Frame,:,0])
+ax.plot(range(result.shape[1]), result[Frame,:,0])
 ax = fig.add_subplot(4, 1, 2)
 ax.set_title("right Wall")
-ax.plot(range(result.shape[1]), y_test[0,:,1])
-ax.plot(range(result.shape[1]), result[0,:,1])
+ax.plot(range(result.shape[1]), y_test[Frame,:,1])
+ax.plot(range(result.shape[1]), result[Frame,:,1])
 ax = fig.add_subplot(4, 1, 3)
 ax.set_title("left links")
-ax.plot(range(result.shape[1]), y_test[0,:,2])
-ax.plot(range(result.shape[1]), result[0,:,2])
+ax.plot(range(result.shape[1]), y_test[Frame,:,2])
+ax.plot(range(result.shape[1]), result[Frame,:,2])
 ax = fig.add_subplot(4, 1, 4)
 ax.set_title("Gate")
-ax.plot(range(result.shape[1]), y_test[0,:,3])
-ax.plot(range(result.shape[1]), result[0,:,3])
+ax.plot(range(result.shape[1]), y_test[Frame,:,3])
+ax.plot(range(result.shape[1]), result[Frame,:,3])
 fig.tight_layout()
 #fig.savefig("Conv2ShortResult.png")
 #plt.show()
 
-Frame=0
+
 Data=X_test[Frame,:,:]
 ResultCa=result[Frame,:,:]
 ResultNu=np.argmax(ResultCa, axis=1)
